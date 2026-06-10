@@ -1,4 +1,4 @@
-name: xiaoxu_tts # 插件唯一识别名，必须为合法 Python 标识符（仅字母/数字/下划线，不能以数字开头）
+name: astrbot_plugin_xiaomi_tts # 插件唯一识别名，必须为合法 Python 标识符（仅字母/数字/下划线，不能以数字开头）
 display_name: 小米 TTS 语音合成 # 用于展示的名字
 desc: 基于小米 MiMo 语音大模型的 TTS 插件，支持多种预置音色设置与风格控制，可将文本合成为语音并发送。 # 插件简短描述
 version: v1.0.0 # 插件版本号
