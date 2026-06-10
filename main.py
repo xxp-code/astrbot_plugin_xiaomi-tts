@@ -17,9 +17,7 @@ PRESET_VOICES = {
     "Dean": "英文男声 - Dean",
 }
 
-# 用于在 after_message_sent 中传递合成文本（避免修改原消息链）
-_tts_pending: dict[str, str] = {}
-# 防止 after_message_sent 重复触发导致语音发送两次
+# 防止 on_decorating_result 重复触发导致语音附加两次
 _tts_processed_sessions: set[str] = set()
 
 
@@ -37,8 +35,8 @@ class XiaomiTTS(Star):
     # ======================== 自动语音合成 ========================
 
     @filter.on_decorating_result()
-    async def auto_tts_mark(self, event: AstrMessageEvent):
-        """标记待合成的文本（不修改原消息链），由 after_message_sent 负责发送语音"""
+    async def auto_tts_decorate(self, event: AstrMessageEvent):
+        """自动将 LLM 文本回复转为语音并附加到消息链末尾"""
         if not self.config.get("auto_tts", True):
             return
 
@@ -59,37 +57,22 @@ class XiaomiTTS(Star):
             if full_text.startswith(prefix):
                 return
 
-        _tts_pending[event.unified_msg_origin] = full_text
-
-    @filter.after_message_sent()
-    async def auto_tts_send(self, event: AstrMessageEvent):
-        """消息发送后，异步合成并发送语音"""
-        if not self.config.get("auto_tts", True):
-            return
-
-        umo = event.unified_msg_origin
-        text = _tts_pending.pop(umo, None)
-        if not text:
-            return
-
-        # 去重：同一会话+同一文本的语音只发一次
-        dedup_key = f"{umo}:{text}"
+        # 去重：同一会话+同一文本只附加一次语音
+        dedup_key = f"{event.unified_msg_origin}:{full_text}"
         if dedup_key in _tts_processed_sessions:
             return
-        # 防止 set 无限增长
         if len(_tts_processed_sessions) > 200:
             _tts_processed_sessions.clear()
         _tts_processed_sessions.add(dedup_key)
 
-        tts_provider = self.context.get_using_tts_provider(umo=umo)
+        tts_provider = self.context.get_using_tts_provider(umo=event.unified_msg_origin)
         if not tts_provider:
             return
 
         try:
-            audio_path = await tts_provider.get_audio(text)
+            audio_path = await tts_provider.get_audio(full_text)
             if audio_path:
-                chain = [Record(file=audio_path)]
-                yield event.chain_result(chain)
+                result.chain = list(result.chain) + [Record(file=audio_path)]
         except Exception as e:
             logger.warning(f"自动 TTS 合成失败（消息不受影响）: {e}")
 
