@@ -1,6 +1,6 @@
-name: astrbot_plugin_xiaoxu_tts # 插件唯一识别名，以 astrbot_plugin_ 前缀开头，必须为合法 Python 标识符（仅字母/数字/下划线）
+name: xiaoxu_tts # 插件唯一识别名
 display_name: 小米 TTS 语音合成 # 用于展示的名字
 desc: 基于 AstrBot 已配置的 MiMo TTS 提供商进行语音合成，支持音色与风格设置。 # 插件简短描述
 version: v1.0.1 # 插件版本号
 author: xiaoxu # 作者
-repo: https://github.com/xiaomi/astrbot_plugin_xiaomi-tts # 插件的仓库地址
+repo: https://github.com/xxp-code/astrbot_plugin_xiaomi-tts.git # 插件的仓库地址，请替换为你的实际 GitHub 仓库 URL
