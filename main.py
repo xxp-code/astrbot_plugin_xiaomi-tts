@@ -2,6 +2,7 @@ from astrbot.api.event import filter, AstrMessageEvent
 from astrbot.api.star import Context, Star, register
 from astrbot.api import logger
 from astrbot.api import AstrBotConfig
+from astrbot.api.message_components import Record
 
 # 预置音色信息（供用户参考，实际音色由 AstrBot 中配置的 MiMo TTS 提供商决定）
 PRESET_VOICES = {
@@ -99,7 +100,7 @@ class XiaomiTTS(Star):
 
             audio_path = await tts_provider.get_audio(text_to_speak)
             if audio_path:
-                yield event.file_result(audio_path)
+                yield event.chain_result([Record(file=audio_path)])
             else:
                 yield event.plain_result("❌ TTS 提供商未返回音频文件路径，请检查提供商配置。")
 
