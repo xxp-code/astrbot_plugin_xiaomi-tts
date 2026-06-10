@@ -17,8 +17,13 @@ PRESET_VOICES = {
     "Dean": "英文男声 - Dean",
 }
 
+# 用于在 after_message_sent 中传递合成文本（避免修改原消息链）
+_tts_pending: dict[str, str] = {}
+# 防止 after_message_sent 重复触发导致语音发送两次
+_tts_processed_sessions: set[str] = set()
 
-@register("xiaomi_tts", "YourName", "小米语音大模型 TTS 音色设置插件，基于 AstrBot 已配置的 MiMo TTS 提供商", "1.0.0")
+
+@register("xiaoxu_tts", "xiaoxu", "小米语音大模型 TTS 音色设置插件，基于 AstrBot 已配置的 MiMo TTS 提供商", "1.0.1")
 class XiaomiTTS(Star):
     def __init__(self, context: Context, config: AstrBotConfig):
         super().__init__(context)
@@ -32,49 +37,59 @@ class XiaomiTTS(Star):
     # ======================== 自动语音合成 ========================
 
     @filter.on_decorating_result()
-    async def auto_tts_decorate(self, event: AstrMessageEvent):
-        """自动将 LLM 文本回复转为语音并附加到消息链中"""
-        # 未开启自动 TTS 则跳过
+    async def auto_tts_mark(self, event: AstrMessageEvent):
+        """标记待合成的文本（不修改原消息链），由 after_message_sent 负责发送语音"""
         if not self.config.get("auto_tts", True):
             return
 
-        # 获取当前结果链
         result = event.get_result()
-        if not result:
+        if not result or not result.chain:
             return
 
-        chain = result.chain
-        if not chain:
-            return
-
-        # 收集所有纯文本内容
         text_parts = []
-        for comp in chain:
+        for comp in result.chain:
             if isinstance(comp, Plain) and comp.text:
                 text_parts.append(comp.text)
 
         full_text = "".join(text_parts).strip()
-        if not full_text:
+        if len(full_text) < 4:
+            return
+        # 过滤 TTS 插件自己的回复
+        for prefix in ("🔊", "🎤", "🎭", "⚙️", "✅", "❌", "🤖"):
+            if full_text.startswith(prefix):
+                return
+
+        _tts_pending[event.unified_msg_origin] = full_text
+
+    @filter.after_message_sent()
+    async def auto_tts_send(self, event: AstrMessageEvent):
+        """消息发送后，异步合成并发送语音"""
+        if not self.config.get("auto_tts", True):
             return
 
-        # 过滤太短的文本（只发了个表情/符号）
-        if len(full_text) < 2:
+        umo = event.unified_msg_origin
+        text = _tts_pending.pop(umo, None)
+        if not text:
             return
 
-        # 过滤 /tts 指令回复，避免自循环
-        if full_text.startswith("🔊") or full_text.startswith("🎤") or full_text.startswith("🎭") or full_text.startswith("⚙️"):
+        # 去重：同一会话+同一文本的语音只发一次
+        dedup_key = f"{umo}:{text}"
+        if dedup_key in _tts_processed_sessions:
             return
+        # 防止 set 无限增长
+        if len(_tts_processed_sessions) > 200:
+            _tts_processed_sessions.clear()
+        _tts_processed_sessions.add(dedup_key)
 
-        # 获取 TTS 提供商
-        tts_provider = self.context.get_using_tts_provider(umo=event.unified_msg_origin)
+        tts_provider = self.context.get_using_tts_provider(umo=umo)
         if not tts_provider:
             return
 
         try:
-            audio_path = await tts_provider.get_audio(full_text)
+            audio_path = await tts_provider.get_audio(text)
             if audio_path:
-                chain.append(Record(file=audio_path))
-                result.chain = chain
+                chain = [Record(file=audio_path)]
+                yield event.chain_result(chain)
         except Exception as e:
             logger.warning(f"自动 TTS 合成失败（消息不受影响）: {e}")
 
