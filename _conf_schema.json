@@ -1,24 +1,8 @@
 {
-  "api_key": {
-    "description": "小米 MiMo 开放平台 API Key",
-    "type": "string",
-    "hint": "在 https://platform.xiaomimimo.com 控制台获取 API Key",
-    "obvious_hint": true
-  },
-  "tts_model": {
-    "description": "TTS 模型",
-    "type": "string",
-    "hint": "选择使用的语音合成模型",
-    "options": [
-      "mimo-v2.5-tts",
-      "mimo-v2-tts"
-    ],
-    "default": "mimo-v2.5-tts"
-  },
   "voice": {
     "description": "默认音色",
     "type": "string",
-    "hint": "设置默认的合成音色。V2.5 模型支持：mimo_default、冰糖、茉莉、苏打、白桦、Mia、Chloe、Milo、Dean。V2 模型支持：mimo_default、default_zh、default_en",
+    "hint": "设置默认的合成音色。实际效果取决于 AstrBot 中配置的 MiMo TTS 提供商是否支持该音色。",
     "default": "mimo_default",
     "options": [
       "mimo_default",
@@ -29,31 +13,13 @@
       "Mia",
       "Chloe",
       "Milo",
-      "Dean",
-      "default_zh",
-      "default_en"
+      "Dean"
     ]
   },
   "style": {
     "description": "默认发音风格",
     "type": "string",
-    "hint": "设置默认的语音风格，留空则使用默认风格。支持：开心、悲伤、生气、温柔、活泼、严肃等，多个风格用空格分隔",
+    "hint": "设置默认的语音风格，留空使用默认风格。支持：开心、悲伤、温柔、活泼、严肃、东北话、粤语等，多个风格空格分隔。",
     "default": ""
-  },
-  "speed": {
-    "description": "默认语速控制",
-    "type": "string",
-    "hint": "语速描述，如：正常、较慢、较快、非常快。留空使用默认语速",
-    "default": ""
-  },
-  "audio_format": {
-    "description": "音频输出格式",
-    "type": "string",
-    "hint": "非流式请选择 wav",
-    "options": [
-      "wav",
-      "pcm16"
-    ],
-    "default": "wav"
   }
 }
