@@ -1,8 +1,14 @@
 {
+  "auto_tts": {
+    "description": "自动语音合成",
+    "type": "bool",
+    "hint": "开启后，机器人的所有文本回复自动附带语音。",
+    "default": true
+  },
   "voice": {
     "description": "默认音色",
     "type": "string",
-    "hint": "设置默认的合成音色。实际效果取决于 AstrBot 中配置的 MiMo TTS 提供商是否支持该音色。",
+    "hint": "设置默认的合成音色。实际效果取决于 AstrBot 中配置的 TTS 提供商是否支持该音色。",
     "default": "mimo_default",
     "options": [
       "mimo_default",
